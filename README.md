@@ -1,77 +1,44 @@
 # matplotlib_in_Mathematica
 简单封装了一个库，实现了 Mathematica 绘图的部分选项。
 
-顺带吐槽：
-
-为什么 2D 和 3D 的选项还不一样。。
-
-2D:
-
-```Python
-plt.xlim(PlotRange[0])
-plt.ylim(PlotRange[-1])
-```
-
-3D:
-
-```Python
-ax.set_xlim(PlotRange[0])
-ax.set_ylim(PlotRange[1])
-ax.set_zlim(PlotRange[-1])
-```
-
 ---
 
 目前实现的函数
 
-### Plot3D
+1. Plot
+2. DiscretePlot3D
+3. Transpose
+4. ListPlot3D
+5. ListLinePlot
+6. ListPlot
+7. Range
+8. Transpose
+9. Plot3D
+10. PolarPlot
+11. ParametricPlot
+12. ParametricPlot3D
 
-```Python
-Plot3D(lambda x, y: Sin(x+y), (-5, 5, 0.3), (-4, 4, 0.3),PlotRange=(-3,3),PlotLabel="Sin(x+y)",AxesLabel=("x","y","z"))
-```
+---
 
-### Plot
+## 选项
 
-```Python
-Plot(lambda x: Tan(x), (0, 2*Pi, 0.02),PlotLabel="tan(x)",AxesLabel=("x", "y"),PlotRange=(-2, 2))
-```
+### 2D 直角坐标 Rect
 
-### DiscretePlot3D
+1. PlotRange
+2. PlotLabel
+3. AxesLabel
+4. GridLines
 
-```Python
-DiscretePlot3D(lambda x, y: Sin(x+y), (-5, 5, 0.3), (-4, 4, 0.3))
-```
+### 3D Rect
 
-### Transpose
+1. PlotRange
+2. PlotLabel
+3. AxesLabel
+4. GridLines
 
-```Python
-Transpose([list1,list2,...])
-```
+### 2D Polar
 
-### ListPlot3D
+1. PlotRange
+2. PlotLabel
+3. AxesLabel
 
-```Python
-ListPlot3D([[x1,y1,z1],[x2,y2,z2]...])
-```
-
-### ListLinePlot
-
-```Python
-ListLinePlot([[x1,y1],[x2,y2]...])
-```
-
-### ListPlot
-
-```Python
-ListPlot([[x1,y1],[x2,y2]...])
-ListPlot([y1,y2,y3,y4])
-```
-
-### Range
-
-```Python
-Range(5)
-Range(0,5)
-Range(0,5,2)
-Range(0,6,2)
-```
