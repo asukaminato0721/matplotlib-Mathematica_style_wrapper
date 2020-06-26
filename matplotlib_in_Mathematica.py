@@ -22,7 +22,8 @@ def Range(*args):
         args = list(args)
         args[1] += args[-1]
         result = np.array(np.arange(*args))
-        return result[np.logical_and(args[0] <= result, result <= args[1]-args[-1])]
+        return result[np.logical_and(
+            args[0] <= result, result <= args[1]-args[-1])]
     # https://stackoverflow.com/questions/10062954/valueerror-the-truth-value-of-an-array-with-more-than-one-element-is-ambiguous
     # https://stackoverflow.com/questions/12647471/the-truth-value-of-an-array-with-more-than-one-element-is-ambigous-when-trying-t
 
@@ -118,7 +119,8 @@ def ListPlot(xylist: list, **kwargs):
         # if not 多图:
         plt.show()
     if isinstance(xylist[0], (int, float)):
-        ax.scatter(Range(len(xylist)), xylist)
+        ax.scatter(np.linspace(1, len(xylist), len(xylist)), xylist)
+        plt.show()
 
 
 def ListLinePlot(xylist, **kwargs):
@@ -128,7 +130,7 @@ def ListLinePlot(xylist, **kwargs):
     # if not 多图:
     ax = plt.figure().add_subplot(111)
     option2d(kwargs, ax)
-    ax.plot(*list(zip(*xylist)))  # zip(*list) 是转置，得到生成器，list 转列表，再 * 拆开作为参数传入
+    ax.plot(*list(zip(*xylist)))  # zip (*list) 是转置，得到生成器，list 转列表，再 * 拆开作为参数传入
     plt.tight_layout()
     # if not 多图:
     plt.show()
@@ -165,11 +167,9 @@ def DiscretePlot3D(f, xrange, yrange, **kwargs):
     """
     ax = plt.figure().add_subplot(111, projection='3d')
     option3d(kwargs, ax)
-    x = Range(*xrange)
-    y = Range(*yrange)
+    x, y = np.linspace(*xrange), np.linspace(*yrange)
     x, y = np.meshgrid(x, y)
-    z = f(x, y)
-    ax.scatter(x, y, z)
+    ax.scatter(x, y,  f(x, y))
     plt.tight_layout()
     # if not 多图:
     plt.show()
@@ -182,7 +182,7 @@ def Plot(f, xrange, **kwargs):
     # if not 多图:
     ax = plt.figure().add_subplot(111)
     option2d(kwargs, ax)
-    x = Range(*xrange)
+    x = np.linspace(*xrange)
     if isinstance(f, (list, tuple)):
         for _ in f:
             ax.plot(x, _(x))
@@ -200,8 +200,7 @@ def Plot3D(fxy, xrange, yrange, **kwargs):
     # https://stackoverflow.com/questions/37521910/set-zlim-in-matplotlib-scatter3d
     ax = plt.figure().add_subplot(111, projection='3d')
     option3d(kwargs, ax)
-    x = Range(*xrange)
-    y = Range(*yrange)
+    x, y = np.linspace(*xrange), np.linspace(*yrange)
     x, y = np.meshgrid(x, y)
     if isinstance(fxy, (list, tuple)):
         for _ in fxy:
@@ -218,7 +217,7 @@ def PolarPlot(f, trange, **kwargs):
     """
     PolarPlot(lambda t:Sin(t),(0,2*Pi,0.01),)
     """
-    t = Range(*trange)
+    t = np.linspace(*trange)
     # https://matplotlib.org/3.1.0/gallery/pie_and_polar_charts/polar_demo.html
     ax = plt.subplot(111, projection='polar')
     option2dpolar(kwargs, ax)
@@ -231,8 +230,75 @@ def PolarPlot(f, trange, **kwargs):
     plt.show()
 
 
-def ContourPlot(f, xrange, yrange):
-    pass
+def ContourPlot(f, xrange, yrange, **kwargs):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    option2d(kwargs, ax)
+    x, y = np.linspace(*xrange), np.linspace(*yrange)
+    X, Y = np.meshgrid(x, y)
+    if isinstance(f, (list, tuple)):
+        for _ in f:
+            ax.contour(X, Y, _(X, Y), [0])
+        plt.show()
+    else:
+        ax.contour(X, Y, f(X, Y), [0])
+        plt.show()
+
+
+def ContourPlot3D(f, xrange: tuple, yrange: tuple, zrange: tuple, **kwargs):
+    # https://stackoverflow.com/a/4687582/13040423
+    ''' create a plot of an implicit function
+    fn  ...implicit function (plot where fn==0)
+    bbox ..the x,y,and z limits of plotted interval'''
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    option3d(kwargs, ax)
+    A = np.linspace(*xrange)  # resolution of the contour
+    B = np.linspace(*yrange)  # number of slices
+    A1, A2 = np.meshgrid(A, A)  # grid on which the contour is plotted
+    if isinstance(f, (list | tuple)):
+        for _ in f:
+            for z in B:  # plot contours in the XY plane
+                X, Y = A1, A2
+                Z = _(X, Y, z)
+                ax.contour(X, Y, Z+z, [z], zdir='z')
+                # [z] defines the only level to plot
+                # for this contour for this value of z
+
+            for y in B:  # plot contours in the XZ plane
+                X, Z = A1, A2
+                Y = _(X, y, Z)
+                ax.contour(X, Y+y, Z, [y], zdir='y')
+
+            for x in B:  # plot contours in the YZ plane
+                Y, Z = A1, A2
+                X = _(x, Y, Z)
+                ax.contour(X+x, Y, Z, [x], zdir='x')
+            ax.set_zlim3d(*zrange[:-1])
+            ax.set_xlim3d(*xrange[:-1])
+            ax.set_ylim3d(*yrange[:-1])
+        plt.show()
+    else:
+        for z in B:  # plot contours in the XY plane
+            X, Y = A1, A2
+            Z = _(X, Y, z)
+            ax.contour(X, Y, Z+z, [z], zdir='z')
+            # [z] defines the only level to plot
+            # for this contour for this value of z
+
+        for y in B:  # plot contours in the XZ plane
+            X, Z = A1, A2
+            Y = _(X, y, Z)
+            ax.contour(X, Y+y, Z, [y], zdir='y')
+
+        for x in B:  # plot contours in the YZ plane
+            Y, Z = A1, A2
+            X = _(x, Y, Z)
+            ax.contour(X+x, Y, Z, [x], zdir='x')
+        ax.set_zlim3d(*zrange[:-1])
+        ax.set_xlim3d(*xrange[:-1])
+        ax.set_ylim3d(*yrange[:-1])
+    plt.show()
 
 
 def ParametricPlot(f_list, *uvrange, **opts):
@@ -242,7 +308,7 @@ def ParametricPlot(f_list, *uvrange, **opts):
         """
         Case1
         """
-        u = Range(*uvrange[0])
+        u = np.linspace(*uvrange[0])
         x = f_list[0](u)
         y = f_list[1](u)
         ax.plot(x, y)
@@ -253,26 +319,26 @@ def ParametricPlot(f_list, *uvrange, **opts):
         Case2
         """
         for f in f_list:
-            u = Range((*uvrange[0]))
+            u = np.linspace((*uvrange[0]))
             x = f[0](u)
             y = f[1](u)
             ax.plot(x, y)
         # if not 多图:
         plt.show()
     elif not isinstance(f_list[0], (list, tuple)) and len(uvrange) == 2:
-        vrange = Range(*(uvrange[-1]))
+        vrange = np.linspace(*(uvrange[-1]))
         for v in vrange:
-            u = Range(*(uvrange[0]))
+            u = np.linspace(*(uvrange[0]))
             x = f_list[0](u)
             y = f_list[1](u)
             ax.plot(x, y)
             # if not 多图:
         plt.show()
     elif isinstance(f_list[0], (list, tuple)) and len(uvrange) == 2:
-        vrange = Range(*(uvrange[-1]))
+        vrange = np.linspace(*(uvrange[-1]))
         for v in vrange:
             for f in f_list:
-                u = Range(*(uvrange[0]))
+                u = np.linspace(*(uvrange[0]))
                 x = f[0](v, u)
                 y = f[1](v, u)
                 ax.plot(x, y, color='b')
@@ -284,10 +350,10 @@ def ParametricPlot3D(f_list, *uvrange, **opts):
     ax = plt.figure().add_subplot(111, projection='3d')
     option3d(opts, ax)
     if not isinstance(f_list[0], (list, tuple)) and len(uvrange) == 1:
-        x = f_list[0](Range(*(uvrange[0])))
-        y = f_list[1](Range(*(uvrange[0])))
-        z = f_list[2](Range(*(uvrange[0])))
-     #   x,y=np.meshgrid(x,y)
+        x = f_list[0](np.linspace(*(uvrange[0])))
+        y = f_list[1](np.linspace(*(uvrange[0])))
+        z = f_list[2](np.linspace(*(uvrange[0])))
+        # x,y=np.meshgrid(x,y)
         ax.plot(x, y, z)
         plt.show()
     elif not isinstance(f_list[0], (list, tuple)) and len(uvrange) == 2:
@@ -295,8 +361,8 @@ def ParametricPlot3D(f_list, *uvrange, **opts):
         uvrange=[[s,e,d],[s,e,d]]
         """
         u, v = uvrange
-        u, v = np.mgrid[u[0]:u[1]: (u[1]-u[0])/u[2]*1j,
-                             v[0]: v[1]: ((v[1]-v[0])/v[2])*1j  ]
+        u, v = np.mgrid[u[0]:u[1]: (u[1]-u[0])*u[2]*1j,
+                        v[0]: v[1]: ((v[1]-v[0])*v[2])*1j]
         # https://stackoverflow.com/a/11156353/13040423
         x = f_list[0](u, v)
         y = f_list[1](u, v)
@@ -305,21 +371,14 @@ def ParametricPlot3D(f_list, *uvrange, **opts):
         plt.show()
     elif isinstance(f_list[0], (list, tuple)) and len(uvrange) == 2:
         u, v = uvrange
-        u, v = np.mgrid[u[0]:u[1]: (u[1]-u[0])/u[2]*1j,
-                             v[0]: v[1]: ((v[1]-v[0])/v[2])*1j]
+        u, v = np.mgrid[u[0]:u[1]: (u[1]-u[0])*u[2]*1j,
+                        v[0]: v[1]: ((v[1]-v[0])*v[2])*1j]
         for f in f_list:
             x = f[0](u, v)
             y = f[1](u, v)
             z = f[2](u, v)
             ax.plot_surface(x, y, z)
         plt.show()
-
-# def Show(*args):
-#     # 多图 = True
-#     args
-#     plt.tight_layout()
-#     plt.show()
-    # 多图 = False
 
 
 Sin = np.sin
@@ -337,31 +396,41 @@ ArcTan = np.arctan
 Sqrt = np.sqrt
 
 if __name__ == "__main__":
-    # Plot(lambda y: Sin(y), (0, 2*Pi, 0.02))
-    # ParametricPlot([lambda x:Sin(x), lambda y: Cos(y)], (0, 7, 0.1))
-    # Plot3D([lambda x, y: Sin(x+y), lambda m, n:m+n], (-5, 5, 0.3), (-4, 4, 0.3),
+    # ContourPlot3D(lambda x, y, z: x**2+y**2+z**2-2,
+    #               (0, 2, 10), (0, 2, 10), (0, 2, 10))
+    # Plot(lambda y: Sin(y), (0, 2*Pi, 200))
+    # ParametricPlot([lambda x:Sin(x), lambda y: Cos(y)], (0, 7, 70))
+    # Plot3D([lambda x, y: Sin(x+y), lambda m, n:m+n],
+    #  (-5, 5, 100), (-4, 4,100),
     #        PlotRange=(-3, 3), PlotLabel="tan(x)", AxesLabel=("x", "y", "z")),
     # ListPlot3D([[1, 1, 2], [3, 5, 8], [1, 3, 4]], PlotRange=(-4, 4))
     # ListPlot([[1, 1],           [3, 5],              [1, 3]])
-    # DiscretePlot3D(lambda x, y: Sin(x+y), (-5, 5, 0.2),      (-5, 5, 0.2))
-    # PolarPlot([lambda t: Sin(t), lambda u:Cos(u)],   (0, 2*Pi, Pi/100))
-    print(Range(5))
-    print(Range(1, 7, 2))
+    # ListPlot([1, 2, 3, 4, 5])
+    # DiscretePlot3D(lambda x, y: Sin(x+y), (-5, 5, 100),      (-5, 5, 100))
+    # PolarPlot([lambda t: Sin(t), lambda u:Cos(u)],   (0, 2*Pi, 100))
     # print(Range(1, 8, 2))
     # print(Range(0, 6))
-    # Plot([lambda x: Sin(x)], (0, 2*Pi, 0.3), PlotRange=(-4, 4), GridLines=True)
-    # ParametricPlot(((lambda x: Sin(x), lambda y: Cos(y)), [
-    #                lambda u: Sin(3*u), lambda v:Cos(1 * v)]), (0, 6*Pi, Pi/100))
+    # Plot([lambda x: Sin(x)],
+    # (0, 2*Pi, 100), PlotRange=(-4, 4), GridLines=True)
+    # ParametricPlot(((lambda x: Sin(x), lambda y: Cos(y)),
+    #                 [lambda u: Sin(3*u), lambda v:Cos(1 * v)]),
+    #                (0, 6*Pi, 300))
     # ParametricPlot(
     #     [
     #         [lambda r, t: r*Cos(t), lambda r, t: (1-r)*Sin(t)]
-    #     ], [0, 2*Pi, Pi/100], [0, 1, 0.1], PlotLabel="模仿 Mathematica"
+    #     ], [0, 2*Pi, 100], [0, 1,100], PlotLabel="模仿 Mathematica"
     # )
     # ParametricPlot3D([lambda t:t,lambda t: 2*t,lambda t: 3*t],[0,2,0.1])
     # ParametricPlot3D([
     #     [lambda t,u:t+u, lambda t,u: 2*t+u, lambda t,u: 3*t-u],
     #     [lambda t, u:t, lambda t,u: 5*t, lambda t,u: 3*t]]
-    #     [0, 2, 0.1],[0,2,0.1])
-    ParametricPlot3D([[lambda u, v: Cos(u),   lambda u, v: Sin(u)+Cos(v),   lambda u, v: Sin(v)],
-                      [lambda u,v:u+v,lambda u,v: u-v,lambda u,v: u+2*v]],
-                      [0, 2*Pi, 0.3], [-Pi, Pi, 0.2],PlotLabel="Mathematica",AxesLabel=["x","y","z"])
+    #     [0, 2, 100],[0,2,100])
+    # ParametricPlot3D([
+    #     [lambda u, v: Cos(u),
+    #      lambda u, v: Sin(u)+Cos(v),
+    #      lambda u, v: Sin(v)],
+    #     [lambda u, v:u+v, lambda u, v: u-v, lambda u, v: u+2*v]],
+    #     [0, 2*Pi, 100], [-Pi, Pi, 100],
+    #     PlotLabel="Mathematica", AxesLabel=["x", "y", "z"])
+    ContourPlot([lambda x, y: x+y-5, lambda x, y: x **
+                 2+y**2-5], (-4, 4, 50), (-4, 4, 50))
